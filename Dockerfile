@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0t64 \
     libxcb1 \
     libmagic1 \
+    libnuma1 \
     && rm -rf /var/lib/apt/lists/*
 
 # libgl1/libglib2.0-0t64/libxcb1 are runtime shared libs (libGL.so.1,
@@ -51,6 +52,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # absent the import can block or raise, so keeping it image-only avoids
 # regressing pip/venv installs on hosts without libmagic. Debian always has the
 # lib here, so the import is instant and detection actually works.
+#
+# libnuma1 provides libnuma.so.1, which sgl_kernel's prebuilt CUDA
+# extension (sgl_kernel/sm*/common_ops.abi3.so) links against. Cookbook
+# installs SGLang from PyPI, so no package manager pulls this in; without
+# it every SGLang serve dies at import with "libnuma.so.1: cannot open
+# shared object file", surfaced as the misleading "[sgl_kernel] CRITICAL:
+# Could not load any common_ops library!".
 
 # Docker CLI (client only — daemon stays on the host via the
 # /var/run/docker.sock mount). The Debian `docker.io` package ships
