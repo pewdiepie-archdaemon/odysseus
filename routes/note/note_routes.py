@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from core.database import SessionLocal, Note
 from core.middleware import INTERNAL_TOOL_USER
 from src.auth_helpers import require_user
-from src.constants import DATA_DIR
+from src.constants import DATA_DIR, UTILITY_MAX_TOKENS, UTILITY_TIMEOUT
 from src.upload_handler import reserve_upload_references
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -223,7 +223,7 @@ async def dispatch_reminder(
                         {"role": "system", "content": sys_prompt},
                         {"role": "user", "content": f"Title: {title}\n\n{note_body}".strip()},
                     ],
-                    temperature=0.7, max_tokens=200, headers=headers, timeout=30,
+                    temperature=0.7, max_tokens=UTILITY_MAX_TOKENS, headers=headers, timeout=UTILITY_TIMEOUT,
                 )
                 from src.text_helpers import strip_think as _strip_think
                 # prose=True strips untagged "The user wants me to…" chain-of-thought.

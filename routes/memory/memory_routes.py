@@ -23,6 +23,7 @@ def _strip_list_prefix(text: str) -> str:
 
 from services.memory import MemoryManager, MemoryStoreUnreadable
 from core.session_manager import SessionManager
+from src.constants import UTILITY_MAX_TOKENS
 from src.request_models import MemoryAddRequest
 from core.database import SessionLocal
 from src.llm_core import llm_call_async
@@ -267,7 +268,7 @@ def setup_memory_routes(memory_manager: MemoryManager, session_manager: SessionM
                 t_model,
                 messages,
                 temperature=0.2,
-                max_tokens=500,
+                max_tokens=UTILITY_MAX_TOKENS,
                 headers=t_headers,
             )
             try:

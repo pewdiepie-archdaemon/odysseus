@@ -113,6 +113,26 @@ PASSWORD_MIN_LENGTH = 8
 DEFAULT_TEMPERATURE = 1.0
 DEFAULT_MAX_TOKENS = 0
 
+# Budget for the short-output utility calls that back titles, tags,
+# classifications and one-shot parses.
+#
+# Reasoning models (Qwen3, DeepSeek R1, QwQ, Minimax M2, ...) spend tokens
+# inside <think> before emitting a single visible character, and that
+# thinking is charged against max_tokens. A budget sized for the answer
+# alone is therefore consumed entirely by the reasoning: the response
+# comes back with finish_reason "length" and an empty content string.
+# Nothing raises, so the feature just silently does nothing.
+#
+# Measured against a local Qwen3.6-35B: a 3-6 word title left ~30 tokens
+# of visible output from a 1024 budget, and budgets of 200 and 512
+# returned the empty string. 4096 clears that with room to spare while
+# still capping a model that loops.
+UTILITY_MAX_TOKENS = 4096
+
+# Wall-clock room to match. A local reasoner filling the budget above
+# needs well past the 20-30s these call sites used to allow.
+UTILITY_TIMEOUT = 60
+
 
 def internal_api_base() -> str:
     """Base URL for in-process loopback calls to Odysseus's own API.

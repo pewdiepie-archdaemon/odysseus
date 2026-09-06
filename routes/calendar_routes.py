@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from dateutil.rrule import rrulestr
 
 from core.database import SessionLocal, CalendarCal, CalendarDeletedEvent, CalendarEvent
+from src.constants import UTILITY_MAX_TOKENS, UTILITY_TIMEOUT
 from src.auth_helpers import effective_user, require_user
 from src.upload_limits import read_upload_limited, ICS_MAX_BYTES
 from src.upload_handler import reserve_upload_references
@@ -1695,8 +1696,8 @@ def setup_calendar_routes(upload_handler=None) -> APIRouter:
                 ],
                 headers=headers,
                 temperature=0.0,
-                max_tokens=512,
-                timeout=20,
+                max_tokens=UTILITY_MAX_TOKENS,
+                timeout=UTILITY_TIMEOUT,
             )
         except Exception as e:
             return {"ok": False, "error": f"LLM call failed: {e}"}

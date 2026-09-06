@@ -11,7 +11,7 @@ from sqlalchemy import case, func, or_
 from core.database import SessionLocal, Document, DocumentVersion
 from core.database import Session as DbSession
 from src.auth_helpers import get_current_user, _auth_disabled
-from src.constants import MAIL_ATTACHMENTS_DIR
+from src.constants import MAIL_ATTACHMENTS_DIR, UTILITY_MAX_TOKENS, UTILITY_TIMEOUT
 from src.upload_handler import reserve_upload_references
 
 logger = logging.getLogger(__name__)
@@ -1016,9 +1016,9 @@ def setup_document_routes(session_manager, upload_handler=None) -> APIRouter:
                 [{"role": "system", "content": "You classify documents as junk or keep. Respond only with a JSON array."},
                  {"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=200,
+                max_tokens=UTILITY_MAX_TOKENS,
                 headers=headers,
-                timeout=30,
+                timeout=UTILITY_TIMEOUT,
             )
 
             # Parse verdicts

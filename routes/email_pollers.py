@@ -29,6 +29,7 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from src.constants import UTILITY_MAX_TOKENS
 from src.task_endpoint import resolve_task_candidates, task_llm_call_async
 
 from routes.email_helpers import (
@@ -847,7 +848,7 @@ async def _auto_summarize_pass_single(days_back: int = 1, account_id: str | None
                             ],
                             fallback_url=url, fallback_model=model, fallback_headers=headers,
                             owner=account_owner or None,
-                            temperature=0.7, max_tokens=1024, timeout=90,
+                            temperature=0.7, max_tokens=UTILITY_MAX_TOKENS, timeout=90,
                         )
                         reply = _apply_email_style_mechanics(_extract_reply(reply or ""))
                         if reply:
@@ -1134,7 +1135,7 @@ async def _auto_summarize_pass_single(days_back: int = 1, account_id: str | None
                             messages=payload["messages"],
                             fallback_url=url, fallback_model=model, fallback_headers=headers,
                             owner=account_owner or None,
-                            temperature=0, max_tokens=200, timeout=60,
+                            temperature=0, max_tokens=UTILITY_MAX_TOKENS, timeout=60,
                         )
                         urg_raw = _strip_think(urg_raw or "")
                         urg_raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", urg_raw, flags=re.MULTILINE).strip()
@@ -1265,7 +1266,7 @@ async def _auto_summarize_pass_single(days_back: int = 1, account_id: str | None
                             ],
                             fallback_url=url, fallback_model=model, fallback_headers=headers,
                             owner=account_owner or None,
-                            temperature=0.1, max_tokens=512, timeout=120,
+                            temperature=0.1, max_tokens=UTILITY_MAX_TOKENS, timeout=120,
                         )
                         raw_out = _strip_think((raw_out or "").strip())
                         raw_out = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_out, flags=re.MULTILINE).strip()

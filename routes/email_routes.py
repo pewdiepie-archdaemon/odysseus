@@ -38,7 +38,7 @@ from email.mime.multipart import MIMEMultipart
 
 from fastapi import APIRouter, Query, UploadFile, File, BackgroundTasks, HTTPException, Depends, Request
 from fastapi.responses import FileResponse, StreamingResponse
-from src.constants import DATA_DIR
+from src.constants import DATA_DIR, UTILITY_MAX_TOKENS, UTILITY_TIMEOUT
 
 from src.llm_core import llm_call_async
 from src.upload_limits import read_upload_limited, EMAIL_COMPOSE_UPLOAD_MAX_BYTES
@@ -5365,7 +5365,7 @@ def setup_email_routes():
                     _candidates,
                     messages=_messages,
                     temperature=0.7,
-                    max_tokens=1024 if fast_reply else 6144,
+                    max_tokens=UTILITY_MAX_TOKENS if fast_reply else 6144,
                     timeout=60 if fast_reply else 180,
                 )
             except Exception as e:
@@ -5399,8 +5399,8 @@ def setup_email_routes():
                             retry_messages,
                             headers=cand_headers,
                             temperature=0.3,
-                            max_tokens=1536 if fast_reply else 4096,
-                            timeout=45 if fast_reply else 120,
+                            max_tokens=UTILITY_MAX_TOKENS if fast_reply else 4096,
+                            timeout=UTILITY_TIMEOUT if fast_reply else 120,
                             max_retries=1,
                         )
                         retry_reply = _apply_email_style_mechanics(_extract_reply(raw_retry or ""))
