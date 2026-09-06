@@ -14,6 +14,9 @@ from src.agent_tools.subprocess_tools import (
     _posix_descendant_pids,
     _run_subprocess_streaming,
     _run_tmux_bash,
+    _run_exec,
+    _tmux_send_line,
+    _tmux_session_name,
 )
 
 
@@ -189,6 +192,65 @@ def test_cancel_kills_tmux_backgrounded_command(tmp_path):
                 os.unlink(marker)
 
     asyncio.run(_run())
+
+
+def test_tmux_session_names_do_not_collide_after_sanitizing():
+    assert _tmux_session_name("chat/one") != _tmux_session_name("chat-one")
+
+
+def test_tmux_session_names_do_not_collide_after_truncating():
+    prefix = "a" * 80
+    first = _tmux_session_name(prefix + "-first")
+    second = _tmux_session_name(prefix + "-second")
+
+    assert first != second
+    assert len(first) <= len("ody-agent-") + 80
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="tmux is POSIX-only")
+@pytest.mark.skipif(shutil.which("tmux") is None, reason="tmux unavailable")
+def test_tmux_session_names_do_not_collide_after_tmux_canonicalizing_periods():
+    async def _run():
+        names = [_tmux_session_name("chat.one"), _tmux_session_name("chat_one")]
+        assert names[0] != names[1]
+        try:
+            for name in names:
+                _, stderr, rc = await _run_exec(
+                    "tmux", "new-session", "-d", "-s", name, timeout=3
+                )
+                assert rc == 0, stderr
+            assert all([await _tmux_has_session_for_test(name) for name in names])
+        finally:
+            for name in names:
+                await _run_exec("tmux", "kill-session", "-t", name, timeout=3)
+
+    async def _tmux_has_session_for_test(name):
+        _, _, rc = await _run_exec("tmux", "has-session", "-t", name, timeout=3)
+        return rc == 0
+
+    asyncio.run(_run())
+
+
+def test_tmux_send_line_submits_text_and_enter_atomically(monkeypatch):
+    async def _run():
+        calls = []
+
+        async def run_exec(*args, **kwargs):
+            calls.append((args, kwargs))
+            return "", "", 0
+
+        monkeypatch.setattr("src.agent_tools.subprocess_tools._run_exec", run_exec)
+        await _tmux_send_line("session", "printf ok")
+        assert calls == [(
+            (
+                "tmux", "send-keys", "-t", "session", "-l", "printf ok",
+                ";", "send-keys", "-t", "session", "C-m",
+            ),
+            {"timeout": 5},
+        )]
+
+    asyncio.run(_run())
+
 
 
 def test_posix_descendant_walk_handles_cycles(monkeypatch):

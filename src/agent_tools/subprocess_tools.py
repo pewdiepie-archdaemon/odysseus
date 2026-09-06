@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 import collections
+import hashlib
 from typing import Optional, Callable, Awaitable, Tuple, Dict
 from core.platform_compat import IS_WINDOWS, find_bash, kill_process_tree
 from src.constants import MAX_OUTPUT_CHARS
@@ -190,8 +191,16 @@ async def _create_bash_subprocess(command: str, **kwargs):
 
 
 def _tmux_session_name(session_id: Optional[str]) -> str:
-    raw = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(session_id or "default")).strip("-")
-    return f"ody-agent-{raw[:80] or 'default'}"
+    raw = str(session_id or "default")
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "-", raw).strip("-") or "default"
+    if safe == raw and len(safe) <= 80:
+        return f"ody-agent-{safe}"
+
+    # Sanitizing and truncating are lossy. Include the complete identifier in a
+    # stable digest so unrelated chats cannot share a tmux session or its lock.
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:10]
+    readable = safe[: 80 - len(digest) - 1].rstrip(".-") or "session"
+    return f"ody-agent-{readable}-{digest}"
 
 
 async def _run_exec(*args: str, timeout: float = 10) -> Tuple[str, str, int]:
@@ -252,7 +261,13 @@ async def _tmux_capture(name: str) -> str:
 
 async def _tmux_send_line(name: str, line: str) -> None:
     if line:
-        await _run_exec("tmux", "send-keys", "-t", name, "-l", line, timeout=5)
+        # Submit literal text and Enter in one tmux client request. Cancellation
+        # cannot otherwise leave a partial command in a persistent pane.
+        await _run_exec(
+            "tmux", "send-keys", "-t", name, "-l", line,
+            ";", "send-keys", "-t", name, "C-m", timeout=5,
+        )
+        return
     await _run_exec("tmux", "send-keys", "-t", name, "C-m", timeout=5)
 
 
