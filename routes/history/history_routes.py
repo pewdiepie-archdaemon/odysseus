@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends
 
 from core.models import ChatMessage
 from core.database import SessionLocal, ChatMessage as DbChatMessage, Session as DbSession
+from src.constants import UTILITY_MAX_TOKENS, UTILITY_TIMEOUT
 from src.auth_helpers import effective_user, require_chat_api_token_scope
 from src.topic_analyzer import analyze_topics
 from src.upload_handler import reserve_message_upload_references
@@ -763,8 +764,8 @@ def setup_history_routes(session_manager, upload_handler=None) -> APIRouter:
                     {"role": "system", "content": sys_prompt},
                     {"role": "user", "content": convo_text},
                 ],
-                temperature=0.2, max_tokens=1024,
-                headers=compact_headers, timeout=30,
+                temperature=0.2, max_tokens=UTILITY_MAX_TOKENS,
+                headers=compact_headers, timeout=UTILITY_TIMEOUT,
             )
             summary = normalize_compaction_summary(summary)
 

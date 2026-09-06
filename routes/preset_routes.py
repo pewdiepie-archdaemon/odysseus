@@ -8,6 +8,7 @@ from typing import Dict, Any, List
 from fastapi import APIRouter, HTTPException, Request, Depends
 from pydantic import BaseModel, Field
 
+from src.constants import UTILITY_MAX_TOKENS
 from src.request_models import PresetUpdateRequest
 from core.middleware import require_admin
 from src.auth_helpers import effective_user
@@ -104,7 +105,7 @@ def setup_preset_routes(preset_manager) -> APIRouter:
             model_spec = data.get("model") or ""
             user = effective_user(request)
             url, model, headers = await asyncio.to_thread(_resolve_model, model_spec, owner=user)
-            result = await llm_call_async(url, model, messages, temperature=0.8, max_tokens=500, headers=headers)
+            result = await llm_call_async(url, model, messages, temperature=0.8, max_tokens=UTILITY_MAX_TOKENS, headers=headers)
             return {"success": True, "prompt": result.strip()}
         except Exception as e:
             logger.error(f"Expand prompt failed: {e}")

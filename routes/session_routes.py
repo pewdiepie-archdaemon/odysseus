@@ -9,6 +9,7 @@ import logging
 
 from core.session_manager import SessionManager
 from core.models import ChatMessage
+from src.constants import UTILITY_MAX_TOKENS
 from src.request_models import SessionResponse
 from core.database import Session as DbSession, SessionLocal, Document, GalleryImage, utcnow_naive
 from src.auth_helpers import (
@@ -1053,7 +1054,7 @@ def setup_session_routes(
                 model,
                 [{"role": "system", "content": prompt}, {"role": "user", "content": convo_text}],
                 temperature=0.2,
-                max_tokens=1024,
+                max_tokens=UTILITY_MAX_TOKENS,
                 headers=headers,
                 timeout=60,
             )
