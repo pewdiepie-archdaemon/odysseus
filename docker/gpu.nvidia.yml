@@ -22,6 +22,13 @@
 # Cookbook -> Dependencies (or pip) before serving GPU models.
 services:
   odysseus:
+    # Docker's default /dev/shm is 64MB. SGLang and vLLM pass tensors
+    # between their tokenizer/scheduler/detokenizer processes through
+    # shared memory and both document raising it (vLLM's own docs pass
+    # --shm-size=8g); multimodal models add image/video buffers on top.
+    # Overrunning it kills a worker with SIGBUS, which surfaces only as an
+    # opaque "scheduler died during initialization (exit code: -7)".
+    shm_size: "8gb"
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
